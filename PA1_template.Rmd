@@ -1,25 +1,118 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Course 5 project"
+author: "Mikhail Chepkiy"
+date: "6 November 2017"
+output: html_document
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
 ## Loading and preprocessing the data
-
-
+```{r}
+    data <- read.csv("activity.csv")
+    # remove NAs
+    data_clean <- data[!is.na(data$steps),]
+```
 
 ## What is mean total number of steps taken per day?
+```{r}
+    library(dplyr)
+    grouped <- group_by(data_clean, date)
+    daily_steps <- summarize(grouped, total = sum(steps))
+    hist(daily_steps$total, main="Total steps per day")
+```
 
+## Mean and median number of steps taken each day
+```{r}
+    summary(daily_steps)
+```
+**mean = 10766, median = 10765**
 
+## Time series plot of the average number of steps taken
+1. Time-series plot
+```{r}
+    interval_steps <- aggregate(steps ~ interval, data, mean)
+    plot(interval_steps$interval, interval_steps$steps, type='l', 
+      main="Avg. number of steps for all days", xlab="Interval", 
+      ylab="Avg. number of steps")
+```
+2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+```[r]
+  max_steps <- which.max(interval_steps$steps)
+  interval_steps[max_steps, ]
+```
+**interval 835 contains ~206.2 steps on average which is MAX**
 
-## What is the average daily activity pattern?
+## Code to describe and show a strategy for imputing missing data
 
+1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
 
+```{r}
+    sum(is.na(data))
+```
+**2394 NAs found**
 
-## Imputing missing values
+2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
 
+Suggest interpolating the missing values with mean()
+```{r}
+    data_interpolated <- data
+    for (i in 1:nrow(data_interpolated)) 
+    {
+        if (is.na(data_interpolated$steps[i])) 
+        {
+            interval_value <- data_interpolated$interval[i]
+            steps_value <- interval_steps[interval_steps$interval == interval_value,]
+            data_interpolated$steps[i] <- steps_value$steps
+        }
+    }
+```
 
+3. Create a new dataset that is equal to the original dataset but with the missing data filled in.
 
-## Are there differences in activity patterns between weekdays and weekends?
+```{r}
+    data_after_interpolation <- aggregate(steps ~ date, data_interpolated, sum)
+```
+
+4. Make a histogram of the total number of steps taken each day and ... 
+
+```{r}
+    hist(data_after_interpolation$steps, main = "Number of steps per day after interpolation")
+```
+
+Calculate and report the mean and median total number of steps taken per day. 
+
+```{r}
+    mean(data_after_interpolation$steps)
+    median(data_after_interpolation$steps)
+    mean(data_after_interpolation$steps) - mean(daily_steps$total)
+    median(data_after_interpolation$steps) - median(daily_steps$total)
+```
+Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+**Mean is the same, median is slightly higher**
+
+5. Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+    # add weekdays
+    data_interpolated['weekday'] <- weekdays(as.POSIXct(data$date))
+    data_interpolated$weekday[data_interpolated$weekday %in% c('Saturday','Sunday')] <- "weekend"
+    data_interpolated$weekday[data_interpolated$weekday != "weekend"] <- "weekday"
+    data_interpolated$weekday <- as.factor(data_interpolated$weekday)
+
+    # avg. steps by interval split by weekdays/weekends
+    data_interpolated_intervals <- aggregate(steps ~ interval + weekday, data_interpolated, mean)
+    library(ggplot2)
+    qplot(interval, 
+      steps, 
+      data = data_interpolated_intervals, 
+      type = 'l', 
+      geom = c("line"), 
+      main = "Number of steps on weekdays/weekends",
+      xlab = "Time interval", 
+      ylab = "Steps") +
+  facet_wrap(~ weekday, ncol = 1)
+```
