@@ -10,14 +10,14 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Loading and preprocessing the data
-```{r}
+```{r echo = TRUE}
     data <- read.csv("activity.csv")
     # remove NAs
     data_clean <- data[!is.na(data$steps),]
 ```
 
 ## What is mean total number of steps taken per day?
-```{r}
+```{r echo = TRUE}
     library(dplyr)
     grouped <- group_by(data_clean, date)
     daily_steps <- summarize(grouped, total = sum(steps))
@@ -25,21 +25,21 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Mean and median number of steps taken each day
-```{r}
+```{r echo = TRUE}
     summary(daily_steps)
 ```
 **mean = 10766, median = 10765**
 
 ## Time series plot of the average number of steps taken
 1. Time-series plot
-```{r}
+```{r echo = TRUE}
     interval_steps <- aggregate(steps ~ interval, data, mean)
     plot(interval_steps$interval, interval_steps$steps, type='l', 
       main="Avg. number of steps for all days", xlab="Interval", 
       ylab="Avg. number of steps")
 ```
 2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
-```[r]
+```{r echo = TRUE}
   max_steps <- which.max(interval_steps$steps)
   interval_steps[max_steps, ]
 ```
@@ -49,7 +49,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
 
-```{r}
+```{r echo = TRUE}
     sum(is.na(data))
 ```
 **2394 NAs found**
@@ -57,7 +57,7 @@ knitr::opts_chunk$set(echo = TRUE)
 2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
 
 Suggest interpolating the missing values with mean()
-```{r}
+```{r echo = TRUE}
     data_interpolated <- data
     for (i in 1:nrow(data_interpolated)) 
     {
@@ -72,19 +72,19 @@ Suggest interpolating the missing values with mean()
 
 3. Create a new dataset that is equal to the original dataset but with the missing data filled in.
 
-```{r}
+```{r echo = TRUE}
     data_after_interpolation <- aggregate(steps ~ date, data_interpolated, sum)
 ```
 
 4. Make a histogram of the total number of steps taken each day and ... 
 
-```{r}
+```{r echo = TRUE}
     hist(data_after_interpolation$steps, main = "Number of steps per day after interpolation")
 ```
 
 Calculate and report the mean and median total number of steps taken per day. 
 
-```{r}
+```{r echo = TRUE}
     mean(data_after_interpolation$steps)
     median(data_after_interpolation$steps)
     mean(data_after_interpolation$steps) - mean(daily_steps$total)
@@ -96,7 +96,7 @@ Do these values differ from the estimates from the first part of the assignment?
 
 5. Are there differences in activity patterns between weekdays and weekends?
 
-```{r}
+```{r echo = TRUE}
     # add weekdays
     data_interpolated['weekday'] <- weekdays(as.POSIXct(data$date))
     data_interpolated$weekday[data_interpolated$weekday %in% c('Saturday','Sunday')] <- "weekend"
